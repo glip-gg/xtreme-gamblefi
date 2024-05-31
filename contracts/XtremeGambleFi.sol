@@ -67,10 +67,11 @@ contract XtremeGambleFi is AccessControl {
                 uint multiplier,
                 bytes multiplierSig) public payable {
 
-        require(msg.value > 0, "You need to send some ether");
-        balances[msg.sender] += msg.value;
-        emit UserDeposit(msg.sender, msg.value);
-
+        if (msg.value > 0) {
+            balances[msg.sender] += msg.value;
+            emit UserDeposit(msg.sender, msg.value);
+        }
+       
         // verify multiplier signature
         address signer = keccack256(abi.encode(matchId, playerId, multiplier)).recover(multiplierSig);
         if (!hasRole(MANAGER_ROLE, signer)) {
