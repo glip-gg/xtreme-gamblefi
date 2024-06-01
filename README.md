@@ -3,9 +3,9 @@
 Xtreme GambleFi is a trustless protocol and platform designed to provide an onchain betting experience around live games and esports
 
 
-Real time data from supported games (or any other source) is processed through the platform to provider end users a fully interactive betting experience.
+Real time data from supported games (or any other source) is processed through the platform to provide end users a fully interactive betting experience.
 
-Currently, BTX (mobile shooter game) games are already live on the platform.
+Currently, BTX (mobile shooter game) is already live on the platform.
 
 <img src="https://raw.githubusercontent.com/glip-gg/xtreme-gamblefi/main/assets/screenshot1.png">
 
@@ -21,14 +21,14 @@ Game managers are entities controlling the games and their outcomes in a trustle
 
 `function endAndSettleGame(uint matchId, uint winner, bytes32 logHash)`
 
-Any user will be able to get the logHash and matchId of a match and use that to access raw logs of the match, and can verify that raw logs themselves match the provided logHash.
+Any user will be able to get the `logHash` and `matchId` of a match and use that to access raw logs of the match, and can verify that raw logs themselves match the provided `logHash`.
 
-With raw logs data available to anyone, anyone can also verify that the sequence of logs results in a particular outcome. 
+Since raw logs data is available to anyone, anyone can also verify that the sequence of logs results in a particular outcome. 
 (We are also building a tool to view and analyse raw logs and their integrity)
 
 ## Live Odds
 
-Game Managers can decide to have Live Odds in their games. E.g at start of game, when there are 12 initial players, odds of any 1 player winning is 12x, but after couple of mins, only 8 players remain in game, then odds should be 8x only.
+Game Managers can decide to have live odds in their games. E.g at start of game, when there are 12 initial players, odds of any player winning is 12x, but after couple of mins, only 8 players remain in game, then odds should be 8x.
 
 Game managers are responsible for providing a `multiplier signature` to the users when users place a bet. Multiplier signature is used to verify the provided multiplier for a particular ingame user is valid.
 
@@ -47,32 +47,32 @@ if (!hasRole(MANAGER_ROLE, signer)) {
 ```
 ## Game Validator
 
-To make sure game data is not being fuzzed before logHash and eventual winner is decided (either from the game server itself or somewhere in between), validators are registered to the protocol which constantly monitors the real time data to find any anomalies in the data.
+To make sure game data is not being fuzzed before logHash and eventual winner is decided (either from the game server itself or somewhere in between), validators are registered to the protocol which constantly monitor the real time data to find any anomalies in the data.
 
 For example,
-Bet was placed on Player 10 getting atleast 1 kill in the game, and a log is emitted that player 10 killed Player 2, however when analysing real time data, Validator notices that Player 10's 3d rotation values were not facing any player when kill was registered, or there was no bulled fired when kill was registered. 
+Bet was placed on Player 10 getting atleast 1 kill in the game, and a log is emitted that player 10 killed Player 2, however when analysing real time data, Validator notices that Player 10's 3d rotation values were not facing any player when kill was registered, or there was no bullet fired when the kill was registered. 
 
-Game Validator's responsibilty are to identify such data anomalies in realtime and submit a challenge for that match.
+Game Validator's responsibilty is to identify such data anomalies in realtime and submit a challenge for that match.
 
 `
 function challengeMatch(uint matchId) public onlyRole(VALIDATOR_ROLE)
 `
 
-When a match is challenged, payouts at game end are paused automatically and can bets can be refunded.
+When a match is challenged, payouts at the end of game are paused automatically and bets are refunded.
 
-We have designed an initial BTX Game Validator according to our set of rules and data points which we will be checking realtime. Other developers are invited to build their own validators to process this real time data and to raise match challenges.
+We have designed an initial BTX Game Validator according to our set of rules and data points which we will be checking realtime. Other developers are invited to build their own validators to process this real time data and to raise match challenges. Validators are also rewarded for catching anamolies in a match.
 
 
 ## FAQ
 
-`Q`. Do game manager know the outcome of a match?.
+`Q`. Do game managers know the outcome of a match?
 
 `A`. All games are live and real time, and the final game outcome cannot be determined by anyone until game has concluded.
 
 
-`Q`. Can the game manager fake data to rig the outcomes
+`Q`. Can the game manager fake data to rig the outcomes?
 
-`A`. Validators ensures the integrity of the data on which outcomes are being decided
+`A`. Validators ensures the integrity of the data on which outcomes are being decided.
 
 `Q`. Can Game Managers start an already played game as a new game where they know the outcome and bet in their favour?
 
