@@ -26,9 +26,9 @@ Any user will be able to get the `logHash` and `matchId` of a match and use that
 Since raw logs data are available publicly, anyone can also verify that the sequence of logs results in a particular outcome. 
 We are also building a tool to view and analyse raw logs and their integrity.
 
-## Live Odds
+## Deposit & Odds
 
-Game Managers can decide to have live odds in their games. E.g at start of game, when there are 12 initial players, odds of Player 1 winning is X1, but after couple of mins, only 8 players remain in game, then odds should change to X2.
+Game Managers can have live odds in their games. E.g at start of game, when there are 12 initial players, odds of Player 1 winning is X1, but after couple of mins, only 8 players remain in game, then odds should change to X2.
 
 Game managers are responsible for providing a `multiplier signature` to the users when users place a bet. Multiplier signature, is used to verify that the provided multiplier for a particular ingame user is valid.
 
