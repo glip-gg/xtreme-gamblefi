@@ -1,11 +1,11 @@
 ## Xtreme GambleFi Protocol
 
-Xtreme GambleFi is a trustless protocol and platform designed to provide an onchain betting experience around live games and esports
+Xtreme GambleFi is a trustless protocol and platform designed to provide an onchain betting experience around live games and esports.
 
 
-Real time data from supported games (or any other source) is processed through the platform to provide end users a fully interactive betting experience.
+Real time data from supported games (or any other source) is processed through the platform to provide end users a fully interactive onchain betting experience.
 
-Currently, BTX (mobile shooter game) is already live on the platform.
+Currently, BTX (mobile shooter game) is live on the platform.
 
 <img src="https://raw.githubusercontent.com/glip-gg/xtreme-gamblefi/main/assets/screenshot1.png">
 
@@ -23,14 +23,14 @@ Game managers are entities controlling the games and their outcomes in a trustle
 
 Any user will be able to get the `logHash` and `matchId` of a match and use that to access raw logs of the match, and can verify that raw logs themselves match the provided `logHash`.
 
-Since raw logs data is available to anyone, anyone can also verify that the sequence of logs results in a particular outcome. 
+Since raw logs data are available public, anyone can also verify that the sequence of logs results in a particular outcome. 
 (We are also building a tool to view and analyse raw logs and their integrity)
 
 ## Live Odds
 
 Game Managers can decide to have live odds in their games. E.g at start of game, when there are 12 initial players, odds of any player winning is 12x, but after couple of mins, only 8 players remain in game, then odds should be 8x.
 
-Game managers are responsible for providing a `multiplier signature` to the users when users place a bet. Multiplier signature is used to verify the provided multiplier for a particular ingame user is valid.
+Game managers are responsible for providing a `multiplier signature` to the users when users place a bet. Multiplier signature, is used to verify that the provided multiplier for a particular ingame user is valid.
 
 `
 depositAndBet(uint amount,
@@ -60,7 +60,7 @@ function challengeMatch(uint matchId) public onlyRole(VALIDATOR_ROLE)
 
 When a match is challenged, payouts at the end of game are paused automatically and bets are refunded.
 
-We have designed an initial BTX Game Validator according to our set of rules and data points which we will be checking realtime. Other developers are invited to build their own validators to process this real time data and to raise match challenges. Validators are also rewarded for catching anamolies in a match.
+We have designed an initial BTX Game Validator according to our set of rules and data points which we will be checking realtime. Other developers are also invited to build their own validators to process this real time data and to raise match challenges. Validators are also rewarded for catching anamolies in a match.
 
 
 ## FAQ
