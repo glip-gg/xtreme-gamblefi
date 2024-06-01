@@ -23,12 +23,12 @@ Game managers are entities controlling the games and their outcomes in a trustle
 
 Any user will be able to get the `logHash` and `matchId` of a match and use that to access raw logs of the match, and can verify that raw logs themselves match the provided `logHash`.
 
-Since raw logs data are available public, anyone can also verify that the sequence of logs results in a particular outcome. 
-(We are also building a tool to view and analyse raw logs and their integrity)
+Since raw logs data are available publicly, anyone can also verify that the sequence of logs results in a particular outcome. 
+We are also building a tool to view and analyse raw logs and their integrity.
 
 ## Live Odds
 
-Game Managers can decide to have live odds in their games. E.g at start of game, when there are 12 initial players, odds of any player winning is 12x, but after couple of mins, only 8 players remain in game, then odds should be 8x.
+Game Managers can decide to have live odds in their games. E.g at start of game, when there are 12 initial players, odds of Player 1 winning is X1, but after couple of mins, only 8 players remain in game, then odds should change to X2.
 
 Game managers are responsible for providing a `multiplier signature` to the users when users place a bet. Multiplier signature, is used to verify that the provided multiplier for a particular ingame user is valid.
 
@@ -47,7 +47,7 @@ if (!hasRole(MANAGER_ROLE, signer)) {
 ```
 ## Game Validator
 
-To make sure game data is not being fuzzed before logHash and eventual winner is decided (either from the game server itself or somewhere in between), validators are registered to the protocol which constantly monitor the real time data to find any anomalies in the data.
+To make sure game data is not being tampered before logHash and eventual winner is decided (either from the game server itself or somewhere in between), validators are registered to the protocol which constantly monitor the real time data to find any anomalies in the data.
 
 For example,
 Bet was placed on Player 10 getting atleast 1 kill in the game, and a log is emitted that player 10 killed Player 2, however when analysing real time data, Validator notices that Player 10's 3d rotation values were not facing any player when kill was registered, or there was no bullet fired when the kill was registered. 
