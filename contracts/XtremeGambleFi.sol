@@ -1,6 +1,6 @@
 pragma solidity ^0.8.4;
 
-import {AccessControl} from "@openzeppelin/contracts/access/AccessControl.sol";
+import {AccessControlUpgradeable} from "@openzeppelin/contracts-upgradeable/access/AccessControlUpgradeable.sol";
 import {ECDSA} from "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
 import {MessageHashUtils} from "@openzeppelin/contracts/utils/cryptography/MessageHashUtils.sol";
 
@@ -15,7 +15,7 @@ interface IBlast {
     function claimAllGas(address contractAddress, address recipient) external returns (uint256);
 }
 
-contract XtremeGambleFi is AccessControl {
+contract XtremeGambleFi is AccessControlUpgradeable {
  
     using ECDSA for bytes32;
 
@@ -67,12 +67,18 @@ contract XtremeGambleFi is AccessControl {
     event FeesWithdraw(uint amount);
     event LogHashUpdated(uint matchId, bytes32 logHash);
 
-    constructor(address blastPointsAddress) {
+     /// @custom:oz-upgrades-unsafe-allow constructor
+    constructor() {
+       _disableInitializers();
+    }
+
+    function initialize(address blastPointsAddress) initializer public {
+        __AccessControl_init();
         _grantRole(OWNER_ROLE, msg.sender);
         _grantRole(MANAGER_ROLE, msg.sender);
         _grantRole(VALIDATOR_ROLE, msg.sender);
-        IBlastPoints(blastPointsAddress).configurePointsOperator(msg.sender);
-        IBlast(0x4300000000000000000000000000000000000002).configureClaimableGas();
+        // IBlastPoints(blastPointsAddress).configurePointsOperator(msg.sender);
+        // IBlast(0x4300000000000000000000000000000000000002).configureClaimableGas();
     }
 
     function depositAndBet(

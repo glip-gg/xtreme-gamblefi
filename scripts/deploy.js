@@ -1,4 +1,5 @@
 const hre = require("hardhat");
+const { ethers, upgrades } = require("hardhat");
 
 const abi = require('../artifacts/contracts/XtremeGambleFi.sol/XtremeGambleFi.json').abi
 
@@ -11,8 +12,9 @@ async function main() {
   let blastPointsMainnetAddress = '0x2536FE9ab3F511540F2f9e2eC2A805005C3Dd800'
 
   console.log('deploying xtreme gamblefi')
+
   const xtremeGambleFactory = await hre.ethers.getContractFactory('XtremeGambleFi');
-  const xtremeGambleContract = await xtremeGambleFactory.deploy(blastPointsTestnetAddress);
+  const xtremeGambleContract = await upgrades.deployProxy(xtremeGambleFactory, [blastPointsTestnetAddress]);
   let deployed = await xtremeGambleContract.waitForDeployment();
   
   console.log("xtreme gamblefi deployed to:", deployed.target);
