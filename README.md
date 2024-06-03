@@ -12,7 +12,8 @@ Currently, BTX (mobile shooter game) is live on the platform.
 <img src="https://raw.githubusercontent.com/glip-gg/xtreme-gamblefi/main/assets/screenshot2.png">
 
 
-Xtreme GamebleFi contract is deployed on Blast at following address - 
+Xtreme GamebleFi contract is deployed on Blast at following address -
+`0xe450fd1d63218a60a924a7ad94ab635f1d5483e0`
 
 
 ## Game Manager
