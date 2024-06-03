@@ -77,8 +77,8 @@ contract XtremeGambleFi is AccessControlUpgradeable {
         _grantRole(OWNER_ROLE, msg.sender);
         _grantRole(MANAGER_ROLE, msg.sender);
         _grantRole(VALIDATOR_ROLE, msg.sender);
-        // IBlastPoints(blastPointsAddress).configurePointsOperator(msg.sender);
-        // IBlast(0x4300000000000000000000000000000000000002).configureClaimableGas();
+        IBlastPoints(blastPointsAddress).configurePointsOperator(msg.sender);
+        IBlast(0x4300000000000000000000000000000000000002).configureClaimableGas();
     }
 
     function depositAndBet(
