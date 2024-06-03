@@ -3,6 +3,7 @@ pragma solidity ^0.8.4;
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 import {AccessControl} from "@openzeppelin/contracts/access/AccessControl.sol";
 import {ECDSA} from "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
+import {MessageHashUtils} from "@openzeppelin/contracts/utils/cryptography/MessageHashUtils.sol";
 
 contract XtremeGambleFi is AccessControl {
  
@@ -15,25 +16,25 @@ contract XtremeGambleFi is AccessControl {
     mapping(address => uint) public balances;
 
     struct XtremeMatch {
-        uint matchId;
-        uint initialMultiplier;
-        uint winningPlayerId;
-        uint status; // 1: started, 2: ended, 3: refunded, 4: challenged
+        uint256 matchId;
         bytes32 logHash;
+        uint16 initialMultiplier;
+        uint8 winningPlayerId; // 0 - no winner yet
+        uint8 status; // 1: started, 2: ended, 3: refunded, 4: challenged
     }
 
     struct MatchPayout {
-        uint matchId;
-        uint payout;
+        uint256 matchId;
+        uint256 payout;
         address winner;
     }
 
     struct MatchBet {
         address better;
-        uint playerId;
-        uint multiplier; // 1.5x, 12x etc, value will be saved as 150, 1200
-        uint amount;
-        uint outcome; // 1: win, 2: lose, 3: refund
+        uint256 amount;
+        uint16 multiplier; // 1.5x, 12x etc, value will be saved as 150, 1200
+        uint8 playerId;
+        uint8 outcome; // 0: not processed, 1: win, 2: lose, 3: refund
     }
 
     mapping(uint => XtremeMatch) public matches;
@@ -41,7 +42,7 @@ contract XtremeGambleFi is AccessControl {
     mapping(uint => MatchBet[]) public matchBets;
 
     error InvalidProof();
-    error MatchChallenged();
+    error MatchChallengedError();
 
     event MatchStarted(uint matchId, uint initialMultiplier);
     event MatchEnded(uint matchId, uint winner, bytes32 logHash);
@@ -54,33 +55,39 @@ contract XtremeGambleFi is AccessControl {
     event UserDeposit(address user, uint amount);
     event UserWithdraw(address user, uint amount);
     event FeesWithdraw(uint amount);
+    event LogHashUpdated(uint matchId, bytes32 logHash);
 
     constructor() {
         _grantRole(OWNER_ROLE, msg.sender);
         _grantRole(MANAGER_ROLE, msg.sender);
+        _grantRole(VALIDATOR_ROLE, msg.sender);
     }
 
     function depositAndBet(
                 uint amount,
                 uint matchId, 
-                uint playerId,
-                uint multiplier,
-                bytes multiplierSig) public payable {
+                uint8 playerId,
+                uint16 multiplier,
+                bytes calldata multiplierSig) public payable {
 
         if (msg.value > 0) {
             balances[msg.sender] += msg.value;
             emit UserDeposit(msg.sender, msg.value);
         }
        
+        require(matches[matchId].matchId != 0, "Match does not exist");
+        require(matches[matchId].status == 1, "Invalid match state");
+
         // verify multiplier signature
-        address signer = keccack256(abi.encode(matchId, playerId, multiplier)).recover(multiplierSig);
+        bytes32 multiplierHash = MessageHashUtils.toEthSignedMessageHash(keccak256(abi.encode(matchId, playerId, multiplier)));
+        address signer = multiplierHash.recover(multiplierSig);
         if (!hasRole(MANAGER_ROLE, signer)) {
             revert InvalidProof();
         }
 
         _placeBet(msg.sender, amount, matchId);
 
-        MatchBet memory newBet = MatchBet(msg.sender, playerId, multiplier, amount, 0);
+        MatchBet memory newBet = MatchBet(msg.sender, amount, multiplier, playerId, 0);
         matchBets[matchId].push(newBet);
 
         emit BetPlaced(matchId, msg.sender, playerId, multiplier, amount);
@@ -103,32 +110,35 @@ contract XtremeGambleFi is AccessControl {
         emit FeesWithdraw(address(this).balance);
     }
 
-    function startGame(uint matchId, uint initialMultiplier) public onlyRole(MANAGER_ROLE) {
+    function startGame(uint matchId, uint16 initialMultiplier) public onlyRole(MANAGER_ROLE) {
         require(matches[matchId].matchId == 0, "Match already exists");
-        XtremeMatch memory newMatch = XtremeMatch(matchId, initialMultiplier, -1, bytes(0));
+        XtremeMatch memory newMatch = XtremeMatch(matchId, bytes32(0), initialMultiplier, 0, 1);
         matches[matchId] = newMatch;
         emit MatchStarted(matchId, initialMultiplier);
     }
 
-    function endAndSettleGame(uint matchId, uint winner, bytes32 logHash) public onlyRole(MANAGER_ROLE) {
+    function endAndSettleGame(uint matchId, uint8 winner, bytes32 logHash) public onlyRole(MANAGER_ROLE) {
         require(matches[matchId].matchId != 0, "Match does not exist");
 
         if (matches[matchId].status == 4) {
-            revert MatchChallenged();
+            revert MatchChallengedError();
         }
 
-        require(matches[matchId].logHash != bytes(0), "Match already ended");
+        require(matches[matchId].logHash == bytes32(0), "Match already ended");
         require(matches[matchId].status == 1, "Invalid match status");
 
         matches[matchId].winningPlayerId = winner;
         matches[matchId].logHash = logHash;
+        matches[matchId].status = 2;
 
-        MatchPayout[] memory matchPayouts = matchPayouts[matchId];
+        emit LogHashUpdated(matchId, logHash);
+
+        MatchPayout[] storage matchPayouts = matchPayouts[matchId];
         require(matchPayouts.length == 0, "Match already paid out");
 
         MatchBet[] memory bets = matchBets[matchId];
         for (uint i = 0; i < bets.length; i++) {
-            MatchBet storage bet = bets[i];
+            MatchBet memory bet = bets[i];
             if (bet.playerId == winner) {
                 uint payout = (bet.amount * bet.multiplier) / 100;
                 balances[bet.better] += payout;
@@ -143,12 +153,20 @@ contract XtremeGambleFi is AccessControl {
         emit MatchEnded(matchId, winner, logHash);
     }
 
+    function setLogHash(uint matchId, bytes32 logHash) public onlyRole(VALIDATOR_ROLE) {
+        require(matches[matchId].matchId != 0, "Match does not exist");
+        matches[matchId].logHash = logHash;
+        emit LogHashUpdated(matchId, logHash);
+    }
+
     function refundMatchBets(uint matchId, bytes32 logHash) public onlyRole(MANAGER_ROLE) {
         require(matches[matchId].matchId != 0, "Match does not exist");
-        require(matches[matchId].logHash != bytes(0), "Match already ended");
+        require(matches[matchId].logHash != bytes32(0), "Match already ended");
         require(matches[matchId].status == 1 || matches[matchId].status == 4, "Invalid match status");
 
-        MatchBet[] memory bets = matchBets[matchId];
+        matches[matchId].status = 3;
+
+        MatchBet[] storage bets = matchBets[matchId];
         for (uint i = 0; i < bets.length; i++) {
             MatchBet storage bet = bets[i];
             if (bet.outcome == 3) continue;
@@ -157,14 +175,13 @@ contract XtremeGambleFi is AccessControl {
             emit BetRefunded(matchId, bet.better);
         }
 
-        matches[matchId].status = 3;
         emit MatchRefunded(matchId);
     }
 
     function refundBetManual(uint matchId, address better) public onlyRole(OWNER_ROLE) {
         require(matches[matchId].matchId != 0, "Match does not exist");
 
-        MatchBet[] memory bets = matchBets[matchId];
+        MatchBet[] storage bets = matchBets[matchId];
         for (uint i = 0; i < bets.length; i++) {
             MatchBet storage bet = bets[i];
             if (bet.better == better) {
@@ -182,7 +199,7 @@ contract XtremeGambleFi is AccessControl {
 
     function challengeMatch(uint matchId) public onlyRole(VALIDATOR_ROLE) {
         require(matches[matchId].matchId != 0, "Match does not exist");
-        require(matches[matchId].logHash != bytes(0), "Match already ended");
+        require(matches[matchId].logHash != bytes32(0), "Match already ended");
         require(matches[matchId].status == 1, "Invalid match status");
 
         matches[matchId].status = 4;
