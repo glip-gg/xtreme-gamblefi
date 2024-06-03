@@ -1,9 +1,19 @@
 pragma solidity ^0.8.4;
 
-import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 import {AccessControl} from "@openzeppelin/contracts/access/AccessControl.sol";
 import {ECDSA} from "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
 import {MessageHashUtils} from "@openzeppelin/contracts/utils/cryptography/MessageHashUtils.sol";
+
+interface IBlastPoints {
+  function configurePointsOperator(address operator) external;
+  function configurePointsOperatorOnBehalf(address contractAddress, address operator) external;
+}
+
+interface IBlast {
+    function configureAutomaticYield() external;
+    function configureClaimableGas() external;
+    function claimAllGas(address contractAddress, address recipient) external returns (uint256);
+}
 
 contract XtremeGambleFi is AccessControl {
  
@@ -57,10 +67,12 @@ contract XtremeGambleFi is AccessControl {
     event FeesWithdraw(uint amount);
     event LogHashUpdated(uint matchId, bytes32 logHash);
 
-    constructor() {
+    constructor(address blastPointsAddress) {
         _grantRole(OWNER_ROLE, msg.sender);
         _grantRole(MANAGER_ROLE, msg.sender);
         _grantRole(VALIDATOR_ROLE, msg.sender);
+        IBlastPoints(blastPointsAddress).configurePointsOperator(msg.sender);
+        IBlast(0x4300000000000000000000000000000000000002).configureClaimableGas();
     }
 
     function depositAndBet(
@@ -205,5 +217,9 @@ contract XtremeGambleFi is AccessControl {
         matches[matchId].status = 4;
         
         emit MatchChallenged(matchId);
+    }
+
+    function claimGasFees() public onlyRole(OWNER_ROLE) {
+        IBlast(0x4300000000000000000000000000000000000002).claimAllGas(address(this), msg.sender);
     }
 }
