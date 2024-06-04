@@ -14,6 +14,8 @@ Currently, BTX (mobile shooter game) is live on the platform.
 
 Xtreme GamebleFi contract is deployed on Blast at following address -
 `0xe450fd1d63218a60a924a7ad94ab635f1d5483e0`
+Points operator address - 
+`0xeE8A0a905eB021761f0160bCc528C0aDEDC666E1`
 
 
 ## Game Manager
